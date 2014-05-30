@@ -54,11 +54,16 @@
 
       // Ungly overwrite
       options.list      = $this.data('list') || options.list;
+      options.item      = $this.data('item') || options.item;
+      options.data      = $this.data('data') || options.data;
       options.nodata    = $this.data('nodata') || options.nodata;
       options.attribute = $this.data('attribute') || options.attribute;
       options.highlight = $this.data('highlight') || options.highlight;
 
       var $list = $(options.list);
+      var length = $list.find(options.item).length;
+      var items = $list.find(options.item);
+      var callback = options.callback || function() {};
 
       if (options.navigation) $this.attr('autocomplete', 'off');
 
@@ -67,44 +72,49 @@
         if (e.keyCode != 38 && e.keyCode != 40 && e.keyCode != 13) {
 
           var q = $this.val().toLowerCase();
+          var numResults = 0;
+          var item, itemText;
 
-          $list.children().removeClass('selected').each(function() {
+          for (var i = 0; i < length; i++) {
+            item = items[i];
 
-            var data = (options.attribute != 'text') ? $(this).attr(options.attribute).toLowerCase() : $(this).text().toLowerCase();
+            itemText = $(item).find(options.data)
 
-            if (data.indexOf(q) == -1) {
+            $(itemText).removeClass("selected");
 
-              $(this).hide();
+            var data = (options.attribute != 'text') ? $(itemText).attr(options.attribute).toLowerCase() : $(itemText).text().toLowerCase();
 
-              $this.trigger('_after_each');
+            if (data.indexOf(q) >= 0) {
+              if (options.highlight) {
+                $(itemText).removeHighlight().highlight(q);
+              }
+
+              $(item).show();
+
+              numResults ++;
 
             } else {
 
-              options.highlight ? $(this).removeHighlight().highlight(q).show() : $(this).show();
-
-              $this.trigger('_after_each');
+              $(item).hide();
 
             }
 
-          });
+          };
+
+          $this.trigger('_after_each');
+
+          callback(numResults);
 
           // No results message
           if (options.nodata) {
 
             $list.find('.no-results').remove();
+            if (!$list.find(options.item + ':visible').length) {
 
-            if (!$list.children(':not([style*="display: none"])').length) {
-
-              $list
-                .children()
-                .first()
-                .clone()
-                .removeHighlight()
-                .addClass('no-results')
-                .show()
-                .prependTo(options.list)
-                .text(options.nodata);
-
+              var d=document.createElement('div')
+              $(d).addClass('no-results')
+                  .html(options.nodata)
+                  .prependTo($list)
             }
 
           }
